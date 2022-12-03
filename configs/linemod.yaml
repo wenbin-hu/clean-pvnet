@@ -1,5 +1,5 @@
 # wait
-model: 'cat_v0'
+model: 'cat'
 model_dir: 'data/model'
 network: 'res'
 heads: ''
