@@ -62,6 +62,8 @@ pip install scipy==1.3.3
 - diameter.txt中存物体的实际大小，只有一个数字，以米为单位，我认为是物体bounding box最长边的长度。
 	
 ### 对pvnet的使用理解
+- 首先使用ObjectDatasetTools生成训练集，得到rgb, mask和相机pose。然后用run.py --type custom进行后处理，生成train.json。后处理主要分为
+两步，第一步根据物体的mesh， 使用Farthest Point Sampling(FPS)得到3D特征点，第二步根据每张图片相机的pose，得到2D图片上的特征点。
 - 网络的输入：rgb图片
 - 已知的信息：物体的3D模型，3D模型下的关键点、bounding box、中心点坐标
 - 网络的输出：'seg', 'vertex', 'mask', 'kpt_2d'
@@ -76,3 +78,7 @@ mask和特征点。猜测为过拟合，故替换背景重新训练：12张背�
 但效果依旧很差（相对来说要好一点点），没能生成正确的mask（有一半图片没有任何mask，另一半有一点点mask）和关键点。
 
 我用相同背景的测试集（即杯子放在标定板上）测试模型，效果很好，说明问题大概率是过拟合。
+
+### 2022-12-03
+和1202的策略一样，使用背景替换。改进之处是杯子的mask更加紧凑，更贴合杯子的边缘（通过改ObjectDatasetTools/create_label_files.py），同时我自
+己拍了几张背景。效果在测试集上依然很差，今天尝试旋转、拉伸（放缩？）、平移的操作。
