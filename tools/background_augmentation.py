@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import random
-import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 
@@ -38,18 +37,22 @@ for i in tqdm(range(len(ori_mugs))):
     mug = ori_mugs[i]
     mask = ori_masks[i]
     pose = ori_poses[i]
-    # save the original images
-    cv2.imwrite(rgb_path + "%d.jpg" % cnt, mug)
-    cv2.imwrite(mask_path + "%d.png" % cnt, mask)
-    np.save(pose_path + "pose%d.npy" % cnt, pose)
-    cnt += 1
-    for bg in random.sample(bgs, k=1):
-        mug_idxs = np.where(mask[:, :, 0] == 255)
-        new_bg = bg.copy()
-        new_bg[mug_idxs[0], mug_idxs[1], :] = mug[mug_idxs[0], mug_idxs[1], :]
-        cv2.imwrite(rgb_path + "%d.jpg"%cnt, new_bg)
-        cv2.imwrite(mask_path + "%d.png"%cnt, mask)
-        np.save(pose_path + "pose%d.npy"%cnt, pose)
+    # save the original image 50%
+    if np.random.rand() > 0.50:
+        cv2.imwrite(rgb_path + "%d.jpg" % cnt, mug)
+        cv2.imwrite(mask_path + "%d.png" % cnt, mask)
+        np.save(pose_path + "pose%d.npy" % cnt, pose)
         cnt += 1
-        # plt.imshow(new_bg)
-        # plt.show()
+    else:
+        # save the image with new background 50%
+        for bg in random.sample(bgs, k=1):
+            mug_idxs = np.where(mask[:, :, 0] == 255)
+            new_bg = bg.copy()
+            new_bg[mug_idxs[0], mug_idxs[1], :] = mug[mug_idxs[0], mug_idxs[1], :]
+            cv2.imwrite(rgb_path + "%d.jpg"%cnt, new_bg)
+            cv2.imwrite(mask_path + "%d.png"%cnt, mask)
+            np.save(pose_path + "pose%d.npy"%cnt, pose)
+            cnt += 1
+            # showing for debug
+            # cv2.imshow('Image with new background', new_bg)
+            # cv2.waitKey(0)
