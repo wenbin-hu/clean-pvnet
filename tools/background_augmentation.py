@@ -5,12 +5,14 @@ import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 
-# load the background
+# resize and load the background
 bgs = []
 bg_path = "/home/wenbin/clean-pvnet/data/background/"
 tmp_num = len([name for name in os.listdir(bg_path) if os.path.isfile(os.path.join(bg_path, name))])
 for name in os.listdir(bg_path):
-    bgs.append(cv2.imread(bg_path + name))
+    img = cv2.imread(bg_path + name)
+    new_img = cv2.resize(img, (640, 480))
+    bgs.append(new_img)
 
 data_path = "/home/wenbin/clean-pvnet/data/custom/"
 # load the original mug pictures

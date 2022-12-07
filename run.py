@@ -1,6 +1,13 @@
 from lib.config import cfg, args
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+from lib.datasets.dataset_catalog import DatasetCatalog
+import pycocotools.coco as coco
+from lib.utils.pvnet import pvnet_config
+from lib.utils import img_utils
+import matplotlib.patches as patches
+from lib.utils.pvnet import pvnet_pose_utils
 
 
 def run_rgb():
@@ -79,7 +86,7 @@ def run_evaluate():
         evaluator.evaluate(output, batch)
     evaluator.summarize()
 
-
+# python run.py --type visualize --cfg_file configs/custom.yaml
 def run_visualize():
     from lib.networks import make_network
     from lib.datasets import make_data_loader
@@ -94,13 +101,16 @@ def run_visualize():
 
     data_loader = make_data_loader(cfg, is_train=False)
     visualizer = make_visualizer(cfg)
-    for batch in tqdm.tqdm(data_loader):
+    cnt = 0
+    for batch in data_loader:
         for k in batch:
             if k != 'meta':
                 batch[k] = batch[k].cuda()
         with torch.no_grad():
             output = network(batch['inp'], batch)
-        visualizer.visualize(output, batch)
+        # visualizer.visualize(output, batch)
+        visualizer.visualize_gt(output, batch, cnt)
+        cnt += 1
 
 
 def run_visualize_train():
@@ -215,6 +225,7 @@ def run_render():
     plt.show()
 
 
+# pre-process the custom data-set
 def run_custom():
     from tools import handle_custom_dataset
     data_root = 'data/custom'
@@ -243,18 +254,22 @@ def run_detector_pvnet():
             output = network(batch['inp'], batch)
         visualizer.visualize(output, batch)
 
+# python run.py --type demo --cfg_file configs/linemod.yaml demo_path demo_images/cat
 def run_demo():
     from lib.datasets import make_data_loader
     from lib.visualizers import make_visualizer
-    import tqdm
+    from tqdm import tqdm
     import torch
     from lib.networks import make_network
     from lib.utils.net_utils import load_network
     import glob
     from PIL import Image
+    import cv2
 
     torch.manual_seed(0)
-    meta = np.load(os.path.join(cfg.demo_path, 'meta.npy'), allow_pickle=True).item()
+    # meta includes: 'kpt_3d', 'corner_3d', 'K' keypoints and corners in the 3D model
+    # K is the camera intrinsic matrix 3x3
+    meta = np.load(os.path.join(cfg.demo_path, '../meta.npy'), allow_pickle=True).item()
     demo_images = glob.glob(cfg.demo_path + '/*jpg')
 
     network = make_network(cfg).cuda()
@@ -263,14 +278,80 @@ def run_demo():
 
     visualizer = make_visualizer(cfg)
 
-    mean, std = np.array([0.485, 0.456, 0.406]), np.array([0.229, 0.224, 0.225])
-    for demo_image in demo_images:
+    mean = pvnet_config.mean
+    std = pvnet_config.std
+    # plt.ion()
+    # figure, ax = plt.subplots()
+    cnt = 0
+    for demo_image in tqdm(demo_images):
         demo_image = np.array(Image.open(demo_image)).astype(np.float32)
+        demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
         inp = (((demo_image/255.)-mean)/std).transpose(2, 0, 1).astype(np.float32)
         inp = torch.Tensor(inp[None]).cuda()
         with torch.no_grad():
+            # output includes: 'seg', 'vertex', 'mask', 'kpt_2d'
             output = network(inp)
-        visualizer.visualize_demo(output, inp, meta)
+        # visualizer.visualize_demo_auto(output, inp, meta, figure, ax)
+        visualizer.visualize_demo_single(output, inp, meta, cnt)
+        cnt += 1
+
+# for analysing the process, testing the computation time
+# python run.py --type test --cfg_file configs/custom.yaml demo_path demo_images/cat
+def run_test():
+    from tqdm import tqdm
+    import torch
+    from lib.networks import make_network
+    from lib.utils.net_utils import load_network
+    import glob
+    from PIL import Image
+    import time
+    import cv2
+
+    torch.manual_seed(0)
+    # meta includes: 'kpt_3d', 'corner_3d', 'K' keypoints and corners in the 3D model
+    # K is the camera intrinsic matrix 3x3
+    meta = np.load(os.path.join(cfg.demo_path, '../meta.npy'), allow_pickle=True).item()
+    demo_images = glob.glob(cfg.demo_path + '/*jpg')
+
+    network = make_network(cfg).cuda()
+    load_network(network, cfg.model_dir, epoch=cfg.test.epoch)
+    network.eval()
+
+    mean = pvnet_config.mean
+    std = pvnet_config.std
+    plt.ion()
+    figure, ax = plt.subplots()
+    time_list = []
+    for demo_image in tqdm(demo_images):
+        demo_image = np.array(Image.open(demo_image)).astype(np.float32)
+        st = time.time()
+        demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
+        inp = (((demo_image/255.)-mean)/std).transpose(2, 0, 1).astype(np.float32)
+        inp = torch.Tensor(inp[None]).cuda()
+        with torch.no_grad():
+            # output includes: 'seg', 'vertex', 'mask', 'kpt_2d'
+            output = network(inp)
+        inp = img_utils.unnormalize_img(inp[0], mean, std).permute(1, 2, 0)
+        kpt_2d = output['kpt_2d'][0].detach().cpu().numpy()
+        kpt_3d = np.array(meta['kpt_3d'])
+        K = np.array(meta['K'])
+        # PnP
+        pose_pred = pvnet_pose_utils.pnp(kpt_3d, kpt_2d, K)
+        time_list.append(time.time() - st)
+        corner_3d = np.array(meta['corner_3d'])
+        corner_2d_pred = pvnet_pose_utils.project(corner_3d, K, pose_pred)
+        # plot
+        ax.imshow(inp)
+        patch0 = ax.add_patch(
+            patches.Polygon(xy=corner_2d_pred[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
+        patch1 = ax.add_patch(
+            patches.Polygon(xy=corner_2d_pred[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
+        figure.canvas.draw()
+        figure.canvas.flush_events()
+        patch0.remove()
+        patch1.remove()
+    print(time_list)
+    print("average time: ", np.mean(time_list))
 
 if __name__ == '__main__':
     globals()['run_'+args.type]()
