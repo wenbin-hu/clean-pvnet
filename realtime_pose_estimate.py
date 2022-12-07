@@ -60,7 +60,6 @@ if __name__ == '__main__':
             cv2.imshow('RealSense', color_image)
             cv2.waitKey(1)
 
-
     finally:
         # Stop streaming
         pipeline.stop()
