@@ -1,5 +1,5 @@
 # wait
-model: 'custom'  # 'mug_1206'
+model: 'custom'  # 'mug_1207'  # 'mug_1206'
 model_dir: 'data/model'
 network: 'res'
 heads: ''

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     corner_3d = get_model_corners(model)
 
     # load the data
-    i = 99
+    i = 888
     rgb = cv2.imread(rgb_dir + '/%d.jpg' % i)
     mask = cv2.imread(mask_dir + '/%d.png' % i)
     pose = np.load(pose_dir + '/pose%d.npy' % i, allow_pickle=True)

@@ -68,7 +68,7 @@ def rotate(rgb, mask, K, fps_2d, fps_3d, angle, resize_rate=1.0):
 # 4. save the new rgb, mask, pose
 if __name__ == '__main__':
     # path
-    data_root = "/home/wenbin/clean-pvnet/data/original_mug/"
+    data_root = "/home/wenbin/clean-pvnet/data/mug_no_augment/"
     pose_dir = os.path.join(data_root, 'pose')
     rgb_dir = os.path.join(data_root, 'rgb')
     mask_dir = os.path.join(data_root, 'mask')
@@ -95,11 +95,11 @@ if __name__ == '__main__':
     while i < 600:
         rgb = cv2.imread(rgb_dir + '/%d.jpg'%i)
         mask = cv2.imread(mask_dir + '/%d.png'%i)
-        pose = np.load(pose_dir + '/%d.npy'%i, allow_pickle=True)
+        pose = np.load(pose_dir + '/pose%d.npy'%i, allow_pickle=True)
         corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
 
         angle = np.random.randint(low=-60, high=60)
-        scale = np.random.uniform(low=0.25, high=2.0)  # 0.5 1.5
+        scale = np.random.uniform(low=0.5, high=1.5)
         dx = np.random.randint(low=-200, high=200)
         dy = np.random.randint(low=-200, high=200)
         # first scale and rotate
