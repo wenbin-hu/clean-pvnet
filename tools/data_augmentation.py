@@ -99,7 +99,7 @@ if __name__ == '__main__':
         corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
 
         angle = np.random.randint(low=-60, high=60)
-        scale = np.random.uniform(low=0.5, high=1.5)
+        scale = np.random.uniform(low=0.25, high=2.0)  # 0.5 1.5
         dx = np.random.randint(low=-200, high=200)
         dy = np.random.randint(low=-200, high=200)
         # first scale and rotate

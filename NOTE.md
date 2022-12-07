@@ -82,3 +82,18 @@ mask和特征点。猜测为过拟合，故替换背景重新训练：12张背�
 ### 2022-12-03
 和1202的策略一样，使用背景替换。改进之处是杯子的mask更加紧凑，更贴合杯子的边缘（通过改ObjectDatasetTools/create_label_files.py），同时我自
 己拍了几张背景。效果在测试集上依然很差，今天尝试旋转、拉伸（放缩？）、平移的操作。
+
+### 2022-12-05
+600张原始训练图片(存放在<code>data/original_mug</code>)，每一张都使用<code>tools/data_augmentation.py</code>经过旋转、平移和缩放
+（无截断），得到600张新的图片。
+- angle = np.random.randint(low=-60, high=60)
+- scale = np.random.uniform(low=0.5, high=1.5)
+- dx = np.random.randint(low=-200, high=200)
+- dy = np.random.randint(low=-200, high=200)
+
+之后再使用<code>background_augmentation.py</code>加上随机背景替换，得到1200张图片，拿来当训练集。得到的效果是目前为止最好的，在train, 
+close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率，在close上有大概50%成功率，在blend上完全不行。可以尝试通过增大缩放的幅度（更大和更小）来提升性能。
+
+### 2022-12-06
+两个改动：1.增加两张实验室桌子的背景 2.放缩的尺度更大(low=0.25, high=2.0)。其他和12-05一样，共1200张图片。
+似乎效果有些微的提升，需要用指标去定量的分析（在测试集上没有ground truth咋整）。
