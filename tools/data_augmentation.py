@@ -90,12 +90,13 @@ if __name__ == '__main__':
     model = renderer.model['pts'] / 1000
     corner_3d = get_model_corners(model)
 
-    pbar = tqdm(total=600)
-    i = 0
-    while i < 600:
-        rgb = cv2.imread(rgb_dir + '/%d.jpg'%i)
-        mask = cv2.imread(mask_dir + '/%d.png'%i)
-        pose = np.load(pose_dir + '/pose%d.npy'%i, allow_pickle=True)
+    pbar = tqdm(total=1200)
+    out_idx = 0
+    in_idx = 0
+    while out_idx < 1200:
+        rgb = cv2.imread(rgb_dir + '/%d.jpg'%in_idx)
+        mask = cv2.imread(mask_dir + '/%d.png'%in_idx)
+        pose = np.load(pose_dir + '/pose%d.npy'%in_idx, allow_pickle=True)
         corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
 
         angle = np.random.randint(low=-60, high=60)
@@ -114,11 +115,18 @@ if __name__ == '__main__':
                 min(new_fps_2d[:, 0]) <= 0 or min(new_fps_2d[:, 1]) <= 0:
             print("Object out of view")
             continue
-        # save the data
-        cv2.imwrite(output_root + "rgb/" + "%d.jpg" % i, new_rgb)
-        cv2.imwrite(output_root + "mask/" + "%d.png" % i, new_mask)
-        np.save(output_root + "pose/" + "pose%d.npy" % i, new_pose, allow_pickle=True)
-        i += 1
+        # save the original data
+        in_idx += 1  # NOTE here
+        cv2.imwrite(output_root + "rgb/" + "%d.jpg" % out_idx, rgb)
+        cv2.imwrite(output_root + "mask/" + "%d.png" % out_idx, mask)
+        np.save(output_root + "pose/" + "pose%d.npy" % out_idx, pose, allow_pickle=True)
+        out_idx += 1
+        pbar.update(1)
+        # save the augmented data
+        cv2.imwrite(output_root + "rgb/" + "%d.jpg" % out_idx, new_rgb)
+        cv2.imwrite(output_root + "mask/" + "%d.png" % out_idx, new_mask)
+        np.save(output_root + "pose/" + "pose%d.npy" % out_idx, new_pose, allow_pickle=True)
+        out_idx += 1
         pbar.update(1)
 
         # plot and debug
