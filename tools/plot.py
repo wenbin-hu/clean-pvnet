@@ -23,23 +23,29 @@ if __name__ == '__main__':
     corner_3d = get_model_corners(model)
 
     # load the data
-    i = 240
-    bgr = cv2.imread(rgb_dir + '/%d.jpg' % i)
-    mask = cv2.imread(mask_dir + '/%d.png' % i)
-    pose = np.load(pose_dir + '/pose%d.npy' % i, allow_pickle=True)
-    corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
-    fps_2d = pvnet_pose_utils.project(fps_3d, K, pose)
-    
-    # if the object is out of view and truncated, discard and redo the process
-    if max(fps_2d[:, 0]) >= bgr.shape[1] or max(fps_2d[:, 1]) >= bgr.shape[0] or \
-            min(fps_2d[:, 0]) < 1 or min(fps_2d[:, 1]) < 1:
-        print("Object out of view")
-    
-    # plot
-    _, axs = plt.subplots(1, 2)
-    axs[0].imshow(mask)
-    axs[1].imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
-    axs[1].plot(fps_2d[:, 0], fps_2d[:, 1], 'go', linewidth=2, markersize=3)
-    axs[1].add_patch(patches.Polygon(xy=corner_2d[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
-    axs[1].add_patch(patches.Polygon(xy=corner_2d[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
-    plt.show()
+    for i in range(1200):
+        bgr = cv2.imread(rgb_dir + '/%d.jpg' % i)
+        mask = cv2.imread(mask_dir + '/%d.png' % i)
+        _, mask = cv2.threshold(mask, 5, 1, cv2.THRESH_BINARY)  # binarize the mask
+        mask = mask[:, :, 0]
+        pose = np.load(pose_dir + '/pose%d.npy' % i, allow_pickle=True)
+        corner_2d = pvnet_pose_utils.project(corner_3d, K, pose).astype(int)
+        fps_2d = pvnet_pose_utils.project(fps_3d, K, pose).astype(int)
+        # plot with opencv
+        line_order = [0, 2, 6, 4, 0, 1, 5, 7, 3, 1, 3, 2, 6, 7, 5, 4]
+        for point in fps_2d:
+            cv2.circle(bgr, tuple(point), 2, (0, 255, 0), -1)
+        for i in range(len(line_order) - 1):
+            cv2.line(bgr, tuple(corner_2d[line_order[i], :]),
+                            tuple(corner_2d[line_order[i + 1], :]), (0, 0, 0), 2)
+        final_frame = cv2.hconcat((bgr, cv2.bitwise_and(bgr, bgr, mask=mask)))
+        cv2.imshow('training data', final_frame)
+        cv2.waitKey(0)
+        # plot with matplotlib
+        # _, axs = plt.subplots(1, 2)
+        # axs[0].imshow(mask)
+        # axs[1].imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+        # axs[1].plot(fps_2d[:, 0], fps_2d[:, 1], 'go', linewidth=2, markersize=3)
+        # axs[1].add_patch(patches.Polygon(xy=corner_2d[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
+        # axs[1].add_patch(patches.Polygon(xy=corner_2d[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
+        # plt.show()
