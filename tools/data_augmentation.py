@@ -84,8 +84,8 @@ if __name__ == '__main__':
         os.makedirs(output_root + "pose/")
 
     # load the original data
+    fps_3d = np.loadtxt(os.path.join(output_root, 'fps.txt'))  # NOTE HERE!
     K = np.loadtxt(os.path.join(data_root, 'camera.txt'))
-    fps_3d = np.loadtxt(os.path.join(data_root, 'fps.txt'))
     renderer = OpenGLRenderer(model_dir)
     model = renderer.model['pts'] / 1000
     corner_3d = get_model_corners(model)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         pose = np.load(pose_dir + '/pose%d.npy'%in_idx, allow_pickle=True)
         corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
 
-        angle = np.random.randint(low=-60, high=60)
+        angle = np.random.randint(low=-90, high=90)
         scale = np.random.uniform(low=0.5, high=1.5)
         dx = np.random.randint(low=-200, high=200)
         dy = np.random.randint(low=-200, high=200)
