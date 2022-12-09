@@ -37,14 +37,14 @@ for i in tqdm(range(len(ori_mugs))):
     mug = ori_mugs[i]
     mask = ori_masks[i]
     pose = ori_poses[i]
-    # save the original image 50%
-    if np.random.rand() > 0.50:
+    # save the original image 25%
+    if np.random.rand() > 0.75:
         cv2.imwrite(rgb_path + "%d.jpg" % cnt, mug)
         cv2.imwrite(mask_path + "%d.png" % cnt, mask)
         np.save(pose_path + "pose%d.npy" % cnt, pose)
         cnt += 1
     else:
-        # save the image with new background 50%
+        # save the image with new background 75%
         for bg in random.sample(bgs, k=1):
             mug_idxs = np.where(mask[:, :, 0] == 255)
             new_bg = bg.copy()
