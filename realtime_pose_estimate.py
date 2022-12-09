@@ -65,7 +65,7 @@ if __name__ == '__main__':
             #     # use the points with small covariance matrix traces
             #     trace_list = [np.matrix.trace(var[i, :, :]) for i in range(var.shape[0])]
             #     trace_rank = ss.rankdata(trace_list)
-            #     kpt_idx = np.where(trace_rank <= 4)
+            #     kpt_idx = np.where(trace_rank <= 7)
 
             # PnP and plot the key points, bounding box
             color = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0), (255, 255, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
