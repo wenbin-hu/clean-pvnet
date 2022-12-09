@@ -105,9 +105,10 @@ cfg.tless.box_ratio = 1.2
 cfg.tless.rot = 360.
 cfg.tless.ratio = 0.8
 
+# vote_dim = (fps_num + 1) * 2
 _heads_factory = {
-    'pvnet': CN({'vote_dim': 18, 'seg_dim': 2}),
-    'ct_pvnet': CN({'vote_dim': 18, 'seg_dim': 2}),
+    'pvnet': CN({'vote_dim': 24, 'seg_dim': 2}),
+    'ct_pvnet': CN({'vote_dim': 24, 'seg_dim': 2}),
     'ct': CN({'ct_hm': 30, 'wh': 2})
 }
 
