@@ -61,7 +61,8 @@ class Dataset(data.Dataset):
 
     def augment(self, img, mask, kpt_2d, height, width):
         # add one column to kpt_2d for convenience to calculate
-        hcoords = np.concatenate((kpt_2d, np.ones((9, 1))), axis=-1)
+        # hcoords = np.concatenate((kpt_2d, np.ones((9, 1))), axis=-1)
+        hcoords = np.concatenate((kpt_2d, np.ones((kpt_2d.shape[0], 1))), axis=-1)
         img = np.asarray(img).astype(np.uint8)
         foreground = np.sum(mask)
         # randomly mask out to add occlusion
