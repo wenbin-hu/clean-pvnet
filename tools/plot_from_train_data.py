@@ -10,7 +10,7 @@ import json
 
 if __name__ == '__main__':
     # path
-    data_root = "/home/wenbin/clean-pvnet/data/socket/"
+    data_root = "/home/wenbin/clean-pvnet/data/custom/"
     pose_dir = os.path.join(data_root, 'pose')
     rgb_dir = os.path.join(data_root, 'rgb')
     mask_dir = os.path.join(data_root, 'mask')
@@ -39,8 +39,8 @@ if __name__ == '__main__':
         fps_2d_train = np.asarray(train_data['annotations'][i]['fps_2d'], dtype=int)
         # plot with opencv
         line_order = [0, 2, 6, 4, 0, 1, 5, 7, 3, 1, 3, 2, 6, 7, 5, 4]
-        for point in fps_2d_proj:
-            cv2.circle(bgr, tuple(point), 2, (0, 255, 0), -1)
+        # for point in fps_2d_proj:
+        #     cv2.circle(bgr, tuple(point), 2, (0, 255, 0), -1)
         for point in fps_2d_train:
             cv2.circle(bgr, tuple(point), 2, (255, 0, 0), -1)
         for i in range(len(line_order) - 1):
