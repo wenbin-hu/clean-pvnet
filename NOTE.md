@@ -102,6 +102,7 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
 
 ### 2022-12-08
 - 使用meshLab手动选取特征点，**3个在圆圈，2个在字，3个在盖子**上。方法是点meshlab工具栏里的黄色感叹号，点特征点，然后按p，信息就在右下角显示。
+- **注意**：改动key-point的数量后，需要更改<code>lib/config/config.py</code>中的<code>_heads_factory</code>
 - 让scale的范围更合理化(0.5-1.5)，目标是首先保证在有限距离内的性能。
 - 用的数据来自mug_no_augment，这个文件夹里的模型相当完整。我改了物体的model，之前的model的底部包含了一部分桌子，同时我也改小了mask（通过改代
 码里的点大小参数）
@@ -131,6 +132,18 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
 - 更大的旋转，-90度到90度（之前-60到60）
 - 如果还不行，考虑重新采数据集，尽量丰富拍摄角度
 
+### 2022-12-16
+- 对socket进行训练笔记
+- 首先按流程使用ObjectDatasetTools采集socket的图片，并得到socket的mesh。因为分辨率较高(1920*1080)，所以各个处理过程都很耗时
+- 由于得到的3D点云和mesh模型不准，因此不能用从3D特征点投影到2D图片的方法来得到训练数据，要手动标注图片中特征点的位置，步骤如下：
+  - 用labelme工具标注图片（300张），每张图片7个特征点，分别在每个充电口的圆心处，注意特征点顺序
+  - 数据存为json格式，参考data/socket_1216/manual_label文件夹
+  - 执行<code>python run.py --type custom</code>命令，生成train.json文件
+  - 调用<code>edit_data_from_manual_label.py</code>程序，更改train.json文件中的fps_2d，改为手动标注的特征点位置（上一步是用3D特征点位置投影生成的2D特征点位置） 
+  - 做数据增广，调用<code>data_augmentation_socket.py</code>，同时会把新的2D特征点存储为<code>fps_2d.json</code>
+  - 执行<code>python run.py --type custom</code>命令，生成train.json文件
+  - 调用<code>edit_data_from_augmented_fps_2d.py</code>，更新train.json中的fps_2d，改为上上步中fps_2d.json中存储的位置
+- **todo**: 优化以上步骤
 
 ### TODOs
 - 应用uncertainty PnP。在lib/config/config.py中把cfg.test.un_pnp改成True。目前还没有编译成功。
