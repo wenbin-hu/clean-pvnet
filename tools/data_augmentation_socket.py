@@ -8,6 +8,7 @@ from lib.utils.pvnet import pvnet_pose_utils
 from lib.utils.linemod.opengl_renderer import OpenGLRenderer
 from handle_custom_dataset import get_model_corners
 from tqdm import tqdm
+import json
 
 # we assume the rgb and mask have the same size
 def shift(rgb, mask, K, fps_2d, fps_3d, ud, vd, resize_rate=1.0):
@@ -23,11 +24,16 @@ def shift(rgb, mask, K, fps_2d, fps_3d, ud, vd, resize_rate=1.0):
     new_fps_2d = rotate_point(new_fps_2d, M)
 
     # shift
-    for v in range(h):
-        for u in range(w):
-            if 0 <= v + vd < h and 0 <= u + ud < w:
-                new_rgb[v+vd, u+ud, :] = resized_rgb[v, u, :]
-                new_mask[v+vd, u+ud] = resized_mask[v, u]
+    # for v in range(h):
+    #     for u in range(w):
+    #         if 0 <= v + vd < h and 0 <= u + ud < w:
+    #             new_rgb[v+vd, u+ud, :] = resized_rgb[v, u, :]
+    #             new_mask[v+vd, u+ud] = resized_mask[v, u]
+
+    translation_matrix = np.float32([[1, 0, ud], [0, 1, vd]])
+    new_rgb = cv2.warpAffine(resized_rgb, translation_matrix, (w, h))
+    new_mask = cv2.warpAffine(resized_mask, translation_matrix, (w, h))
+
     new_fps_2d = np.clip(new_fps_2d + [ud, vd], a_min=[0, 0], a_max=[w, h])  # BE careful of the order of ud vd
 
     # get the new camera pose;
@@ -68,7 +74,7 @@ def rotate(rgb, mask, K, fps_2d, fps_3d, angle, resize_rate=1.0):
 # 4. save the new rgb, mask, pose
 if __name__ == '__main__':
     # path
-    data_root = "/home/wenbin/clean-pvnet/data/mug_no_augment/"
+    data_root = "/home/wenbin/clean-pvnet/data/socket/"
     pose_dir = os.path.join(data_root, 'pose')
     rgb_dir = os.path.join(data_root, 'rgb')
     mask_dir = os.path.join(data_root, 'mask')
@@ -90,56 +96,56 @@ if __name__ == '__main__':
     model = renderer.model['pts'] / 1000
     corner_3d = get_model_corners(model)
 
-    pbar = tqdm(total=1200)
+    # load the train.json
+    with open(data_root + "train.json") as f:
+        ori_train_data = json.load(f)
+
+    pbar = tqdm(total=299*4)
     out_idx = 0
     in_idx = 0
-    while out_idx < 1200:
+    fps_2d_list = []
+    while in_idx < 299:
         rgb = cv2.imread(rgb_dir + '/%d.jpg'%in_idx)
         mask = cv2.imread(mask_dir + '/%d.png'%in_idx)
         pose = np.load(pose_dir + '/pose%d.npy'%in_idx, allow_pickle=True)
         corner_2d = pvnet_pose_utils.project(corner_3d, K, pose)
-
-        angle = np.random.randint(low=-90, high=90)
-        scale = np.random.uniform(low=0.5, high=1.5)
-        dx = np.random.randint(low=-200, high=200)
-        dy = np.random.randint(low=-200, high=200)
-        # first scale and rotate
-        fps_2d = pvnet_pose_utils.project(fps_3d, K, pose)
-        new_rgb, new_mask, new_fps_2d, _, _ = rotate(rgb=rgb, mask=mask, K=K,
-                                                        fps_2d=fps_2d, fps_3d=fps_3d, angle=angle, resize_rate=scale)
-        # then shift
-        new_rgb, new_mask, new_fps_2d, new_pose, new_corner_2d = shift(rgb=new_rgb, mask=new_mask, K=K,
-                                                   fps_2d=new_fps_2d, fps_3d=fps_3d, ud=dx, vd=dy, resize_rate=1.0)
-        # if the object is out of view and truncated, discard and redo the process
-        if max(new_fps_2d[:, 0]) >= rgb.shape[1] or max(new_fps_2d[:, 1]) >= rgb.shape[0] or \
-                min(new_fps_2d[:, 0]) <= 0 or min(new_fps_2d[:, 1]) <= 0:
-            print("Object out of view")
-            continue
+        fps_2d = ori_train_data['annotations'][in_idx]['fps_2d']
+        fps_2d_list.append(fps_2d)
         # save the original data
         in_idx += 1  # NOTE here
         cv2.imwrite(output_root + "rgb/" + "%d.jpg" % out_idx, rgb)
         cv2.imwrite(output_root + "mask/" + "%d.png" % out_idx, mask)
         np.save(output_root + "pose/" + "pose%d.npy" % out_idx, pose, allow_pickle=True)
-        out_idx += 1
-        pbar.update(1)
-        # save the augmented data
-        cv2.imwrite(output_root + "rgb/" + "%d.jpg" % out_idx, new_rgb)
-        cv2.imwrite(output_root + "mask/" + "%d.png" % out_idx, new_mask)
-        np.save(output_root + "pose/" + "pose%d.npy" % out_idx, new_pose, allow_pickle=True)
+
         out_idx += 1
         pbar.update(1)
 
-        # plot and debug
-        # debug = 1
-        # _, axs = plt.subplots(2, 2)
-        # axs[0, 0].imshow(mask)
-        # axs[0, 1].imshow(rgb)
-        # axs[0, 1].plot(fps_2d[:, 0], fps_2d[:, 1], 'go', linewidth=2, markersize=3)
-        # axs[0, 1].add_patch(patches.Polygon(xy=corner_2d[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
-        # axs[0, 1].add_patch(patches.Polygon(xy=corner_2d[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
-        # axs[1, 0].imshow(new_mask)
-        # axs[1, 1].imshow(new_rgb)
-        # axs[1, 1].plot(new_fps_2d[:, 0], new_fps_2d[:, 1], 'go', linewidth=2, markersize=3)
-        # axs[1, 1].add_patch(patches.Polygon(xy=new_corner_2d[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
-        # axs[1, 1].add_patch(patches.Polygon(xy=new_corner_2d[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
-        # plt.show()
+        aug_idx = 0
+        while aug_idx < 3:
+            angle = np.random.randint(low=-90, high=90)
+            scale = np.random.uniform(low=0.5, high=1.5)
+            dx = np.random.randint(low=-200, high=200)
+            dy = np.random.randint(low=-200, high=200)
+            # first scale and rotate
+
+            new_rgb, new_mask, new_fps_2d, _, _ = rotate(rgb=rgb, mask=mask, K=K,
+                                                            fps_2d=fps_2d, fps_3d=fps_3d, angle=angle, resize_rate=scale)
+            # then shift
+            new_rgb, new_mask, new_fps_2d, new_pose, new_corner_2d = shift(rgb=new_rgb, mask=new_mask, K=K,
+                                                       fps_2d=new_fps_2d, fps_3d=fps_3d, ud=dx, vd=dy, resize_rate=1.0)
+            # if the object is out of view and truncated, discard and redo the process
+            if max(new_fps_2d[:, 0]) >= rgb.shape[1] or max(new_fps_2d[:, 1]) >= rgb.shape[0] or \
+                    min(new_fps_2d[:, 0]) <= 0 or min(new_fps_2d[:, 1]) <= 0:
+                print("Object out of view")
+                continue
+
+            # save the augmented data
+            cv2.imwrite(output_root + "rgb/" + "%d.jpg" % out_idx, new_rgb)
+            cv2.imwrite(output_root + "mask/" + "%d.png" % out_idx, new_mask)
+            np.save(output_root + "pose/" + "pose%d.npy" % out_idx, new_pose, allow_pickle=True)
+            fps_2d_list.append(new_fps_2d.tolist())
+            out_idx += 1
+            aug_idx += 1
+            pbar.update(1)
+    with open(output_root + "fps_2d.json", "w") as f:
+        json.dump(fps_2d_list, f)
