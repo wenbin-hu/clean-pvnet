@@ -60,6 +60,8 @@ class Visualizer:
         ax.imshow(inp)
         ax.add_patch(patches.Polygon(xy=corner_2d_pred[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
         ax.add_patch(patches.Polygon(xy=corner_2d_pred[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
+        for point in kpt_2d:
+            ax.plot(point[0], point[1], 'ro')
         plt.show()
         # plt.savefig("/home/wenbin/Documents/1206/train/%d.jpg" % cnt)
 

@@ -10,7 +10,15 @@ import cv2
 import pyrealsense2 as rs
 import json
 import scipy.stats as ss
+from scipy.io import savemat
 
+# 切换不同的网络要改的地方：
+# 1. train.json
+# 2. lib/config/config.py中_heads_factory特征点数量
+# 3. custom.yaml中的模型
+# 4. 可能要改相机的分辨率
+
+# arguments: --type demo --cfg_file configs/custom.yaml
 if __name__ == '__main__':
     # load the information of object from meta.npy
     # meta = np.load('test_images/meta.npy', allow_pickle=True).item()
@@ -42,12 +50,14 @@ if __name__ == '__main__':
     frames = pipeline.wait_for_frames()
     color_frame = frames.get_color_frame()
     intr = color_frame.profile.as_video_stream_profile().intrinsics
-    K = np.array([[intr.fx, 0, intr.ppx], [0, intr.      fy, intr.ppy], [0, 0, 1]])
+    K = np.array([[intr.fx, 0, intr.ppx], [0, intr.fy, intr.ppy], [0, 0, 1]])
+    kpt_2d_list = []
     try:
         while True:
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             color_image = np.asanyarray(color_frame.get_data())
+            # color_image = color_image[960:1920, 540:1080, :]
             color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)  # convert from BGR to RGB
             img_ipnp = color_image.copy()
             # img_unpnp = color_image.copy()
@@ -71,6 +81,7 @@ if __name__ == '__main__':
             color = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0), (255, 255, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
             line_order = [0, 2, 6, 4, 0, 1, 5, 7, 3, 1, 3, 2, 6, 7, 5, 4]
             if kpt_2d.max() > 0:  # all zeros means detection failed
+                kpt_2d_list.append(kpt_2d)
                 pose_ipnp = pvnet_pose_utils.pnp(kpt_3d[kpt_idx, :], kpt_2d[kpt_idx, :], K)
                 corner_2d_ipnp = pvnet_pose_utils.project(corner_3d, K, pose_ipnp).astype(int)
                 # if cfg.test.un_pnp:
@@ -114,3 +125,4 @@ if __name__ == '__main__':
     finally:
         # Stop streaming
         pipeline.stop()
+        # savemat('tmp.mat', {'kpts': kpt_2d_list})

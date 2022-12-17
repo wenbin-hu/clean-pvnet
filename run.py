@@ -285,7 +285,7 @@ def run_demo():
     cnt = 0
     for demo_image in tqdm(demo_images):
         demo_image = np.array(Image.open(demo_image)).astype(np.float32)
-        demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
+        # demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
         inp = (((demo_image/255.)-mean)/std).transpose(2, 0, 1).astype(np.float32)
         inp = torch.Tensor(inp[None]).cuda()
         with torch.no_grad():
@@ -325,7 +325,7 @@ def run_test():
     for demo_image in tqdm(demo_images):
         demo_image = np.array(Image.open(demo_image)).astype(np.float32)
         st = time.time()
-        demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
+        # demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
         inp = (((demo_image/255.)-mean)/std).transpose(2, 0, 1).astype(np.float32)
         inp = torch.Tensor(inp[None]).cuda()
         with torch.no_grad():
