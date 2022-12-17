@@ -295,6 +295,50 @@ def run_demo():
         visualizer.visualize_demo_single(output, inp, meta, cnt)
         cnt += 1
 
+# for analysing the trained socket policy
+# python run.py --type socket --cfg_file configs/custom.yaml demo_path data/custom/rgb
+def run_socket():
+    from lib.datasets import make_data_loader
+    from lib.visualizers import make_visualizer
+    from tqdm import tqdm
+    import torch
+    from lib.networks import make_network
+    from lib.utils.net_utils import load_network
+    import glob
+    from PIL import Image
+    import cv2
+    import json
+
+    torch.manual_seed(0)
+    # meta includes: 'kpt_3d', 'corner_3d', 'K' keypoints and corners in the 3D model
+    # K is the camera intrinsic matrix 3x3
+    meta = np.load(os.path.join(cfg.demo_path, '../meta.npy'), allow_pickle=True).item()
+    demo_images = glob.glob(cfg.demo_path + '/*jpg')
+
+    # load the train.json
+    with open(cfg.demo_path + "/../train.json") as f:
+        train_data = json.load(f)
+
+    network = make_network(cfg).cuda()
+    load_network(network, cfg.model_dir, epoch=cfg.test.epoch)
+    network.eval()
+
+    visualizer = make_visualizer(cfg)
+
+    mean = pvnet_config.mean
+    std = pvnet_config.std
+    # plt.ion()
+    # figure, ax = plt.subplots()
+    for i in range(300):
+        demo_image = np.array(Image.open(cfg.demo_path + '/' + str(i) + '.jpg')).astype(np.float32)
+        # demo_image = cv2.resize(demo_image, (640, 480))  # resize to [640, 480]
+        inp = (((demo_image/255.)-mean)/std).transpose(2, 0, 1).astype(np.float32)
+        inp = torch.Tensor(inp[None]).cuda()
+        with torch.no_grad():
+            # output includes: 'seg', 'vertex', 'mask', 'kpt_2d'
+            output = network(inp)
+        visualizer.visualize_demo_keypoint(output, inp, meta, train_data['annotations'][i]['fps_2d'])
+
 # for analysing the process, testing the computation time
 # python run.py --type test --cfg_file configs/custom.yaml demo_path demo_images/cat
 def run_test():

@@ -65,6 +65,29 @@ class Visualizer:
         plt.show()
         # plt.savefig("/home/wenbin/Documents/1206/train/%d.jpg" % cnt)
 
+    def visualize_demo_keypoint(self, output, inp, meta, kpt_2d_gt):
+        inp = img_utils.unnormalize_img(inp[0], mean, std).permute(1, 2, 0)
+        kpt_2d = output['kpt_2d'][0].detach().cpu().numpy()
+
+        kpt_3d = np.array(meta['kpt_3d'])
+        K = np.array(meta['K'])
+
+        pose_pred = pvnet_pose_utils.pnp(kpt_3d, kpt_2d, K)
+
+        corner_3d = np.array(meta['corner_3d'])
+        corner_2d_pred = pvnet_pose_utils.project(corner_3d, K, pose_pred)
+
+        _, ax = plt.subplots(1)
+        ax.imshow(inp)
+        # ax.add_patch(patches.Polygon(xy=corner_2d_pred[[0, 1, 3, 2, 0, 4, 6, 2]], fill=False, linewidth=1, edgecolor='b'))
+        # ax.add_patch(patches.Polygon(xy=corner_2d_pred[[5, 4, 6, 7, 5, 1, 3, 7]], fill=False, linewidth=1, edgecolor='b'))
+        for point in kpt_2d:
+            ax.plot(point[0], point[1], 'r.')
+        for point in kpt_2d_gt:
+            ax.plot(point[0], point[1], 'g.')
+        plt.show()
+        # plt.savefig("/home/wenbin/Documents/1206/train/%d.jpg" % cnt)
+
     def visualize_demo_auto(self, output, inp, meta, figure, ax):
         inp = img_utils.unnormalize_img(inp[0], mean, std).permute(1, 2, 0)
         kpt_2d = output['kpt_2d'][0].detach().cpu().numpy()

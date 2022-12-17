@@ -144,6 +144,10 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
   - 执行<code>python run.py --type custom</code>命令，生成train.json文件
   - 调用<code>edit_data_from_augmented_fps_2d.py</code>，更新train.json中的fps_2d，改为上上步中fps_2d.json中存储的位置
 - **todo**: 优化以上步骤
+- 训练出的模型socket_1207的特征点识别效果并不好，会抖动且有误差，抖动大概在30像素（1920*1080)左右
+
+### 2022-12-17
+- 由于发现<code>config.py</code>中有数据增强的参数，故这次不做自定义的数据增强，直接拿这300张图片进行训练。
 
 ### TODOs
 - 应用uncertainty PnP。在lib/config/config.py中把cfg.test.un_pnp改成True。目前还没有编译成功。
