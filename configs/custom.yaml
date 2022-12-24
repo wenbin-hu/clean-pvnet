@@ -1,5 +1,5 @@
 # wait
-model: 'custom'  # 'mug_1208'  # 'mug_1207'  # 'mug_1206'
+model: 'custom'
 model_dir: 'data/model'
 network: 'res'
 heads: ''
@@ -15,10 +15,10 @@ train:
     gamma: 0.5
     batch_size: 32
     dataset: 'CustomTrain'
-    cropresize_rate: 1.0
-    rotate_rate: 1.0
-    rotate_min: -30
-    rotate_max: 30
+    cropresize_rate: 0. # 1.0
+    rotate_rate: 0. # 1.0
+    rotate_min: 0  # -30
+    rotate_max: 0  # 30
     weight_decay: 0.
     batch_sampler: 'image_size'
 test:
