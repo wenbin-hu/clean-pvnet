@@ -13,7 +13,7 @@ import scipy.stats as ss
 from scipy.io import savemat
 
 # 切换不同的网络要改的地方：
-# 1. train.json
+# 1. train.json的路径
 # 2. lib/config/config.py中_heads_factory特征点数量
 # 3. custom.yaml中的模型
 # 4. 可能要改相机的分辨率
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # configure realsense stream
     pipeline = rs.pipeline()
     rs_cfg = rs.config()
-    rs_cfg.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    rs_cfg.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)  # 640 480
     pipeline.start(rs_cfg)
     # get the camera intrinsic matrix K
     frames = pipeline.wait_for_frames()
