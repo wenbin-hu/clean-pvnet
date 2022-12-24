@@ -144,10 +144,24 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
   - 执行<code>python run.py --type custom</code>命令，生成train.json文件
   - 调用<code>edit_data_from_augmented_fps_2d.py</code>，更新train.json中的fps_2d，改为上上步中fps_2d.json中存储的位置
 - **todo**: 优化以上步骤
-- 训练出的模型socket_1207的特征点识别效果并不好，会抖动且有误差，抖动大概在30像素（1920*1080)左右
+- 训练出的模型socket_1216的特征点识别效果并不好，会抖动且有误差，抖动大概在30像素（1920*1080)左右
 
 ### 2022-12-17
 - 由于发现<code>config.py</code>中有数据增强的参数，故这次不做自定义的数据增强，直接拿这300张图片进行训练。
+- 训练得到的模型socket_1217在训练数据集上效果也不好，欠拟合，特征点与ground truth有差距
+- **训练参数**来自于两个文件:<code>configs/custom.yaml</code>和<code>libconfig/config.py</code>
+
+### 2022-12-18a
+- 在本地机子上训练: disable all the data augmentation tricks defined in <code>custom.yaml</code>
+  - 效果很差，依然在训练集上的key-points位置误差大
+
+### 2022-12-18b
+- **在实验室机子上训练**: larger batch size 16 (32 would cause CUDA out of memory), with default augmentation tricks
+- 1218只训练了24个epoch就提前终止了（电脑自动关机问题）
+
+### 2022-12-24
+- 目标是在训练集上过拟合
+- 缩小数据集，从300减少到50，没有任何数据增广手段
 
 ### TODOs
 - 应用uncertainty PnP。在lib/config/config.py中把cfg.test.un_pnp改成True。目前还没有编译成功。
