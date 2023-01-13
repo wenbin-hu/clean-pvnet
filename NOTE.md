@@ -149,7 +149,7 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
 ### 2022-12-17
 - 由于发现<code>config.py</code>中有数据增强的参数，故这次不做自定义的数据增强，直接拿这300张图片进行训练。
 - 训练得到的模型socket_1217在训练数据集上效果也不好，欠拟合，特征点与ground truth有差距
-- **训练参数**来自于两个文件:<code>configs/custom.yaml</code>和<code>libconfig/config.py</code>
+### **注意！在训练和切换跑的模型时，要改训练参数**，来自于两个文件:<code>configs/custom.yaml</code>和<code>libconfig/config.py</code>
 
 ### 2022-12-18a
 - 在本地机子上训练: disable all the data augmentation tricks defined in <code>custom.yaml</code>
@@ -161,7 +161,13 @@ close-to-far, cluttered上有百分百成功率，在far上有80%左右成功率
 
 ### 2022-12-24
 - 目标是在训练集上过拟合
-- 缩小数据集，从300减少到50，没有任何数据增广手段
+- 缩小数据集，从300减少到10，没有任何数据增广手段
+- 训练参数：train.batch_size 4 train.epoch 500 train.lr 1e-2 train.gamma 0.5
+  - 效果奇差，learning rate太大了
+
+### 2022-12-26
+- 10张图数据集
+- python train_net.py --cfg_file configs/custom.yaml train.batch_size 2 train.epoch 500 train.lr 1e-3
 
 ### TODOs
 - 应用uncertainty PnP。在lib/config/config.py中把cfg.test.un_pnp改成True。目前还没有编译成功。

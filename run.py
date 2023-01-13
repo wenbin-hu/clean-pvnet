@@ -269,7 +269,7 @@ def run_demo():
     torch.manual_seed(0)
     # meta includes: 'kpt_3d', 'corner_3d', 'K' keypoints and corners in the 3D model
     # K is the camera intrinsic matrix 3x3
-    meta = np.load(os.path.join(cfg.demo_path, '../meta.npy'), allow_pickle=True).item()
+    meta = np.load(os.path.join(cfg.demo_path, '../meta_mug_1209.npy'), allow_pickle=True).item()
     demo_images = glob.glob(cfg.demo_path + '/*jpg')
 
     network = make_network(cfg).cuda()
@@ -338,6 +338,7 @@ def run_socket():
             # output includes: 'seg', 'vertex', 'mask', 'kpt_2d'
             output = network(inp)
         visualizer.visualize_demo_keypoint(output, inp, meta, train_data['annotations'][i]['fps_2d'])
+        # visualizer.visualize_mask(output, inp, meta, 0)
 
 # for analysing the process, testing the computation time
 # python run.py --type test --cfg_file configs/custom.yaml demo_path demo_images/cat
